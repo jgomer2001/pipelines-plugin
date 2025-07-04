@@ -7,11 +7,11 @@ apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'opensearch.pluginzip'
 
-def pluginName = 'rename'
-def pluginDescription = 'Custom plugin'
-def packagePath = 'org.example'
-def pathToPlugin = 'path.to.plugin'
-def pluginClassName = 'RenamePlugin'
+def pluginName = 'cedarling' 
+def pluginDescription = 'A plugin featuring TBAC security to database operations'
+def packagePath = 'io.jans'     
+def pathToPlugin = 'cedarling.opensearch'
+def pluginClassName = 'CedarlingPlugin'
 group = "RenameGroup"
 
 java {
@@ -58,6 +58,7 @@ opensearchplugin {
     classname "${packagePath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE.txt')
     noticeFile rootProject.file('NOTICE.txt')
+    version "1.0.0-SNAPSHOT.0"
 }
 
 // This requires an additional Jar not published as part of build-tools
@@ -88,6 +89,17 @@ repositories {
     maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
     mavenCentral()
     maven { url "https://plugins.gradle.org/m2/" }
+    maven { url "https://maven.jans.io/maven" }
+}
+
+dependencies {
+    // JSON processing
+    implementation "org.json:json:20231013"
+    // Logging
+    implementation "org.apache.logging.log4j:log4j-api:2.21.0"
+    implementation "org.apache.logging.log4j:log4j-core:2.21.0"
+    // Cedarling FFI
+    implementation "io.jans:cedarling-java:0.0.0-nightly"
 }
 
 test {
