@@ -1,0 +1,16 @@
+{
+    "query":{
+        "match_all":{
+        }
+    },
+    "ext": {
+        "tbac": {
+            "tokens": {
+                "access_token": "...",
+                "id_token": "...",
+                "userinfo_token": "..."
+            },
+            "context": { }
+        }
+    }
+}
