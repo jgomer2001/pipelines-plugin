@@ -10,6 +10,12 @@
         ],
         "CEDARLING_ID_TOKEN_TRUST_MODE": "none",
         "CEDARLING_MAPPING_USER": "Jans::User",
+        "CEDARLING_PRINCIPAL_BOOLEAN_OPERATION": {
+            "===": [
+                { "var": "Jans::User" },
+                "ALLOW"
+            ]
+        },
         "CEDARLING_POLICY_STORE_LOCAL": {
             "cedar_version": "4.4.0",
             "policy_stores": { ... }

@@ -44,80 +44,93 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
             }
         }
         */
-        SearchResponse myResponse = response;
-        List<SearchExtBuilder> exts = request.source().ext();
-        Map<String, Object> extResponse = null;
-        logger.info("At processResponse {}");
+        logger.info("At processResponse");
         
+        PluginSettings pluginSettings = SettingsService.getInstance().getSettings();
+        if (!pluginSettings.isEnabled()) {
+            logger.debug("Cedarling processing is disabled");
+            return response;
+        }
+        
+        List<SearchExtBuilder> exts = request.source().ext();
         if (exts.isEmpty()) {
             logger.warn("No 'ext' in request");
-        } else {
-            try {
-                CedarlingSearchExtBuilder cseb = CedarlingSearchExtBuilder.class.cast(exts.get(0));
-                PluginSettings pluginSettings = SettingsService.getInstance().getSettings();
-                
-                SearchHits searchHits = response.getHits();
-                Iterator<SearchHit> it = searchHits.iterator();       
+            return response;
+        }
+        
+        try {
+            Map<String, Object> extResponse;
+            SearchResponse myResponse; 
+            Map empty = Collections.emptyMap();
+            
+            CedarlingSearchExtBuilder cseb = CedarlingSearchExtBuilder.class.cast(exts.get(0));
+            SearchHits searchHits = response.getHits();
+            Iterator<SearchHit> it = searchHits.iterator();
 
-                if (it.hasNext()) {
-                    List<SearchHit> authorized = new ArrayList<>();
-                    Map<String, Object> tbac = cseb.getParams();
-                    String action = pluginSettings.getSearchActionName();
-                    
-                    Map<String, String> tokens = Optional.ofNullable(
-                                tbac.get("tokens")).map(Map.class::cast).orElse(Collections.emptyMap());
-                    JSONObject context = new JSONObject(
-                                Optional.ofNullable(tbac.get("context")).orElse(new Object()));
-                    
-                    long decisionsTook = 0;
-                    do {
-                        SearchHit hit = it.next();
-                        Map<String, Object> map = hit.getSourceAsMap();
-                        
-                        try {
-                            appendExtraAttributes(map, pluginSettings.getSchemaPrefix(), hit.getIndex(), hit.getId());
-                            long temp = System.currentTimeMillis();
-                            boolean allowed = CedarlingService.getInstance().authorize(tokens, action, map, context);
-                            decisionsTook += (System.currentTimeMillis() - temp);
-                            
-                            if (allowed) {
-                                authorized.add(hit);
-                            }
-                        } catch (Exception e) {
-                            authorized.add(hit);    //include the result when Cedarling cannot handle it
-                            logger.error(e.getMessage(), e);
-                        }
-                    } while (it.hasNext());
-                    
-                    //override the hits, the rest remains all the same
-                    SearchHits mySearchHits = new SearchHits(authorized.toArray(new SearchHit[0]), 
-                            searchHits.getTotalHits(), searchHits.getMaxScore(), searchHits.getSortFields(),
-                            searchHits.getCollapseField(), searchHits.getCollapseValues());
-                    
-                    SearchResponseSections sections = response.getInternalResponse();
-                    Map<String, ProfileShardResult> shardResults = sections.profile();
-                    SearchResponseSections mySections = new SearchResponseSections(mySearchHits,
-                            sections.aggregations(), sections.suggest(), sections.timedOut(), sections.terminatedEarly(),
-                            shardResults.isEmpty() ? null : new SearchProfileShardResults(shardResults),
-                            sections.getNumReducePhases(), sections.getSearchExtBuilders());
-                    
-                    myResponse = new SearchResponse(mySections,
-                            response.getScrollId(), response.getTotalShards(), response.getSuccessfulShards(),
-                            response.getSkippedShards(), response.getTook().getMillis(), response.getPhaseTook(),
-                            response.getShardFailures(), response.getClusters(), response.pointInTimeId());
-                    
-                    extResponse = Map.of(
-                            "authorized_hits_count", authorized.size(),
-                            "average_decision_time", (1.0 * decisionsTook) / searchHits.getHits().length
-                    );
-                }
+            if (it.hasNext()) {
+                List<SearchHit> authorized = new ArrayList<>();
+                Map<String, Object> tbac = cseb.getParams();
+                String action = pluginSettings.getSearchActionName();
+                                
+                Map<String, String> tokens = Optional.ofNullable(
+                            tbac.get("tokens")).map(Map.class::cast).orElse(empty);
+                JSONObject context = new JSONObject(Optional.ofNullable(
+                            tbac.get("context")).map(Map.class::cast).orElse(empty));
                 
-            } catch (Exception e) {
-                logger.error("Error parsing 'ext' in request", e);
-                throw e;
+                long decisionsTook = 0;
+                do {
+                    SearchHit hit = it.next();
+                    Map<String, Object> map = hit.getSourceAsMap();
+                    
+                    try {
+                        appendExtraAttributes(map, pluginSettings.getSchemaPrefix(), hit.getIndex(), hit.getId());
+                        long temp = System.currentTimeMillis();
+                        boolean allowed = CedarlingService.getInstance().authorize(tokens, action, map, context);
+                        decisionsTook += (System.currentTimeMillis() - temp);
+                        
+                        if (allowed) {
+                            authorized.add(hit);
+                        }
+                    } catch (Exception e) {
+                        authorized.add(hit);    //include the result when Cedarling cannot handle it
+                        logger.error(e.getMessage(), e);
+                    }
+                } while (it.hasNext());
+                
+                //override the hits, the rest remains all the same
+                SearchHits mySearchHits = new SearchHits(authorized.toArray(new SearchHit[0]), 
+                        searchHits.getTotalHits(), searchHits.getMaxScore(), searchHits.getSortFields(),
+                        searchHits.getCollapseField(), searchHits.getCollapseValues());
+                
+                SearchResponseSections sections = response.getInternalResponse();
+                Map<String, ProfileShardResult> shardResults = sections.profile();
+                SearchResponseSections mySections = new SearchResponseSections(mySearchHits,
+                        sections.aggregations(), sections.suggest(), sections.timedOut(), sections.terminatedEarly(),
+                        shardResults.isEmpty() ? null : new SearchProfileShardResults(shardResults),
+                        sections.getNumReducePhases(), sections.getSearchExtBuilders());
+                
+                myResponse = new SearchResponse(mySections,
+                        response.getScrollId(), response.getTotalShards(), response.getSuccessfulShards(),
+                        response.getSkippedShards(), response.getTook().getMillis(), response.getPhaseTook(),
+                        response.getShardFailures(), response.getClusters(), response.pointInTimeId());
+                
+                extResponse = Map.of(
+                        "authorized_hits_count", authorized.size(),
+                        "average_decision_time", (1.0 * decisionsTook) / searchHits.getHits().length
+                );
+            } else {
+                myResponse = response;
+                extResponse = Map.of(
+                        "authorized_hits_count", 0,
+                        "average_decision_time", 0
+                );
             }
-        }        
-        return CedarlingSearchResponse.make(myResponse, extResponse);
+            return CedarlingSearchResponse.make(myResponse, extResponse);
+            
+        } catch (Exception e) {
+            logger.error("Error parsing 'ext' in request", e);
+            throw e;
+        }
 
     }
 

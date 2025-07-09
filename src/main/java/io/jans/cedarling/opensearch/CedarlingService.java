@@ -25,23 +25,21 @@ public class CedarlingService {
     }
     
     public void init(JSONObject bootstrapProperties) {
-        //TODO: uncomment
-        /*
+        
         try {
             cedarlingAdapter.loadFromJson(bootstrapProperties.toString());
         } catch (Exception e) {
             logger.error("Error initializing Cedarling", e);
         }
-        */
+
     }
 
     public boolean authorize(Map<String, String> tokens, String action, Map<String, Object> resource,
             JSONObject context) throws AuthorizeException, EntityException {
-    //TODO: test with cedarling
-    /*
+
         AuthorizeResult res = cedarlingAdapter.authorize(tokens, action, new JSONObject(resource), context);        
         return res.getDecision();
-*/  return true;
+        
     }
     
 }

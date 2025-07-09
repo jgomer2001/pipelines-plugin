@@ -35,7 +35,7 @@ Follow the docs found [here](https://docs.jans.io/head/cedarling/cedarling-quick
 permit(
     principal is Jans::User,
     action in Jans::Action::"Search",
-    resource is Jans::Student
+    resource is Jans::student
 )
 when {
     resource.grad_year < 2025 || 
@@ -49,7 +49,7 @@ when {
 permit(
   principal,
   action in Jans::Action::"Search",
-  resource is Jans::Student
+  resource is Jans::student
 )
 when { 
   resource.grad_year < 2025 ||
@@ -57,7 +57,7 @@ when {
 };
 ```
 
-Note `Student` has to be added to the schema and should look like:
+Note `student` has to be added to the schema and should look like:
 
 ```
 {
@@ -75,8 +75,9 @@ Note `Student` has to be added to the schema and should look like:
 }
 ```
 <!--
-More attributes can be added if desired. The `User` resource should be already there if you used Agama lab's policy designer.
+More attributes can be added if desired.
 -->
+The `User` resource should be already there if you used Agama lab's policy designer. Ensure the `role` attribute is not mandatory.
 
 The easiest way to test the policy is using Tarp. Continue with the steps in the doc [page](https://docs.jans.io/head/cedarling/cedarling-quick-start-tbac/) for this purpose now using the previously setup Jans Server and the policy just created. To get the policy URI in Agama Lab, go to "Policy Stores", click on "Manage" on the corresponding policy row, and then on "Copy link".
 
@@ -120,10 +121,10 @@ This plugin settings are dynamic and persistent which means they can be altered 
 
 ## Setup testing data
 
-In the example policy, a `Student` resource was created in the schema. It is expected all resources referenced by policies exist as OpenSearch indices in equivalence. For this, some "student" records should be added:
+In the example policy, a `student` resource was created in the schema. It is expected all resources referenced by policies exist as OpenSearch indices in equivalence. For this, some "students" should be added:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @record.txt -X PUT https://oshost/Student/_doc 
+curl -n -H 'Content-Type: application/json' -d @record.txt https://oshost/student/_doc
 ```
 
 Find `record.txt` in the root directory of this repository. Insert several similar documents varying the `grad_year`.
@@ -131,7 +132,7 @@ Find `record.txt` in the root directory of this repository. Insert several simil
 Issue a request to retrieve the documents added so far:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @query.json https://oshost/Student/_search?pretty
+curl -n -H 'Content-Type: application/json' -d @query.json https://oshost/student/_search?pretty
 ```
 
 `query.json` (in the root of repo) contains a [search request](https://docs.opensearch.org/docs/latest/query-dsl/) that matches all documents in the index. 
@@ -161,7 +162,7 @@ Open Tarp. In the "Authentication Flow" tab, trigger an authentication flow with
 After logging in, grab the three tokens and paste those in the corresponding section inside file `query_ext.json` (found in root of repo). This is an "extended" search query the plugin will have access to so the Cedarling engine can be supplied with tokens and contextual data to make decisions. Immediately, run:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @query_ext.json 'https://oshost/Student/_search?pretty&search_pipeline=cedarling_search'
+curl -n -H 'Content-Type: application/json' -d @query_ext.json 'https://oshost/student/_search?pretty&search_pipeline=cedarling_search'
 ```
 
 The `search_pipeline` is required so the response to the query is intercepted and processed by the plugin which in turn will invoke Cedarling. The response will probably contain less hits than the query issued [earlier](#setup-testing-data) and will come with an `ext` section that reports:
@@ -173,7 +174,10 @@ The `search_pipeline` is required so the response to the query is intercepted an
 
 Once the work to get all of the pieces running is done, making changes to the plugin is rather straightforward: the Java code is in `src` directory and compilation is a matter of issuing `./gradlew compileJava`.
 
+In package-based installations, OpenSearch log is found at `/var/log/opensearch/opensearch.log`. 
+
 TODO:
 
-- See class `io.jans.cedarling.opensearch.CedarlingService`. The Cedarling engine is not actually called right now (code is commented). The call is crashing and research is needed to find the cause
+- Fix the logging statements. Most of them are at INFO level. That might not be OK
+- Check linting and javadoc warnings
 - Copying tokens from Tarp to the payload file to execute the query is uncomfortable. There should be a more agile approach. Plugin is still primitive
