@@ -16,10 +16,7 @@
                 "ALLOW"
             ]
         },
-        "CEDARLING_POLICY_STORE_LOCAL": {
-            "cedar_version": "4.4.0",
-            "policy_stores": { ... }
-        }
+        "CEDARLING_POLICY_STORE_URI":"https://..."
     },
     "searchActionName": "Jans::Action::\"Search\"",
     "schemaPrefix": "Jans",
