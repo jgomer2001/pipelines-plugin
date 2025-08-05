@@ -52,8 +52,8 @@ permit(
   resource is Jans::student
 )
 when { 
-  resource.grad_year < 2025 ||
-  principal in Jans::Role::"SupremeRuler"
+  resource.grad_year < 2026 ||
+  principal in Jans::Role::"AdmissionsCounselor"
 };
 ```
 
