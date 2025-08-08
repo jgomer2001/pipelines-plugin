@@ -124,10 +124,10 @@ This plugin settings are dynamic and persistent which means they can be altered 
 In the example policy, a `student` resource was created in the schema. It is expected all resources referenced by policies exist as OpenSearch indices in equivalence. For this, some "students" should be added:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @record.txt https://oshost/student/_doc
+curl -n -H 'Content-Type: application/json' --data-binary @records.txt https://oshost/student/_bulk
 ```
 
-Find `record.txt` in the root directory of this repository. Insert several similar documents varying the `grad_year`.
+Find `records.txt` in the root directory of this repository. Insert more similar documents varying the `grad_year`. Learn more about Opensearch bulk requests [here](https://docs.opensearch.org/latest/api-reference/document-apis/bulk/).
 
 Issue a request to retrieve the documents added so far:
 

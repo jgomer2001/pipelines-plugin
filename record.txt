@@ -1,4 +1,0 @@
-{
-  "name": "Jim Dunlop",
-  "grad_year": 2022
-}

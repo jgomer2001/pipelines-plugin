@@ -100,10 +100,24 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-core:2.21.0"
     // Cedarling FFI
     implementation "io.jans:cedarling-java:0.0.0-nightly"
+    
+    // Testing dependencies
+    testImplementation "org.testng:testng:7.11.0"
+    testImplementation "org.jcommander:jcommander:2.0"
+    testImplementation "com.nimbusds:oauth2-oidc-sdk:11.26.1"
+    testImplementation "com.nimbusds:content-type:2.3"
 }
 
 test {
-    include '**/*Tests.class'
+    include '**/*Test.class'
+    
+    useTestNG() {
+        suites 'src/test/resources/suite.xml'
+    }
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
 }
 
 task integTest(type: RestIntegTestTask) {

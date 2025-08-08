@@ -9,6 +9,8 @@ import org.opensearch.search.pipeline.*;
 import org.opensearch.action.search.*;
 import org.opensearch.search.profile.*;
 
+import uniffi.cedarling_uniffi.*;
+
 public class CedarlingSearchResponseProcessor extends AbstractProcessor implements SearchResponseProcessor {
     
     public static final String TYPE = "cedarling";
@@ -44,6 +46,7 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
             }
         }
         */
+        long startedAt = System.currentTimeMillis();
         logger.info("At processResponse");
         
         PluginSettings pluginSettings = SettingsService.getInstance().getSettings();
@@ -59,9 +62,10 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
         }
         
         try {
-            Map<String, Object> extResponse;
             SearchResponse myResponse; 
-            Map empty = Collections.emptyMap();
+            Map empty = Collections.emptyMap();            
+            int authorizedHitsCount = 0;
+            long avgDecisionTime = 0L;
             
             CedarlingSearchExtBuilder cseb = CedarlingSearchExtBuilder.class.cast(exts.get(0));
             SearchHits searchHits = response.getHits();
@@ -114,18 +118,21 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                         response.getSkippedShards(), response.getTook().getMillis(), response.getPhaseTook(),
                         response.getShardFailures(), response.getClusters(), response.pointInTimeId());
                 
-                extResponse = Map.of(
-                        "authorized_hits_count", authorized.size(),
-                        "average_decision_time", (1.0 * decisionsTook) / searchHits.getHits().length
-                );
+                authorizedHitsCount = authorized.size();
+                avgDecisionTime = Math.round((1.0 * decisionsTook) / searchHits.getHits().length);
+                
             } else {
                 myResponse = response;
-                extResponse = Map.of(
-                        "authorized_hits_count", 0,
-                        "average_decision_time", 0
-                );
             }
-            return CedarlingSearchResponse.make(myResponse, extResponse);
+            
+            return CedarlingSearchResponse.make(
+                        myResponse, 
+                        Map.of(
+                            "authorized_hits_count", authorizedHitsCount,
+                            "average_decision_time", avgDecisionTime,
+                            "total_processing_time", System.currentTimeMillis() - startedAt
+                        )
+                    );
             
         } catch (Exception e) {
             logger.error("Error parsing 'ext' in request", e);
