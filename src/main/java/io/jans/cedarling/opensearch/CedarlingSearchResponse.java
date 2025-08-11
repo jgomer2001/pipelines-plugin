@@ -12,7 +12,7 @@ public class CedarlingSearchResponse extends SearchResponse {
 
     private Map<String, Object> params;
 
-    private CedarlingSearchResponse(
+    public CedarlingSearchResponse(
         Map<String, Object> params,
         SearchResponseSections internalResponse,
         String scrollId,
@@ -20,36 +20,17 @@ public class CedarlingSearchResponse extends SearchResponse {
         int successfulShards,
         int skippedShards,
         long tookInMillis,
+        PhaseTook phaseTook,
         ShardSearchFailure[] shardFailures,
-        Clusters clusters) {
+        Clusters clusters,
+        String pointInTimeId) {
 
-        super(internalResponse, scrollId, totalShards, successfulShards, skippedShards, tookInMillis, shardFailures, clusters);
+        super(internalResponse, scrollId, totalShards, successfulShards, skippedShards, 
+                tookInMillis, phaseTook, shardFailures, clusters, pointInTimeId);
         this.params = params;
+
     }
 
-    public static CedarlingSearchResponse make(SearchResponse sr, Map<String, Object> params) {
-        
-        return new CedarlingSearchResponse(params,
-            sr.getInternalResponse(),
-            sr.getScrollId(),
-            sr.getTotalShards(),
-            sr.getSuccessfulShards(),
-            sr.getSkippedShards(),
-            sr.getSuccessfulShards(),
-            sr.getShardFailures(),
-            sr.getClusters()
-        );
-                        
-    }
-/*
-    public void setParams(Map<String, Object> params) {
-        this.params = params;
-    }
-
-    public Map<String, Object> getParams() {
-        return this.params;
-    }
-*/
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
 

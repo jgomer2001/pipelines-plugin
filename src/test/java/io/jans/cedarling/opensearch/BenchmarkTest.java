@@ -13,17 +13,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BenchmarkTest {
     
+    private static final int MAX_GPA = 5;
+     
     private Logger logger = LogManager.getLogger(getClass());
     private NetworkUtil nu = null;
     private Random ranma = new SecureRandom();
     
-    private String indexName;
     private int entries;
+    private String indexName;
     private String bulkEntryTemplate;
-    private String query;
-    
-    private int queryTookMs;
-    private int filteredQueryTookMs;
+    private String queryTemplate;
+    private boolean useCedarling;
     
     @BeforeClass
     public void initTestSuite(ITestContext context) throws Exception {
@@ -36,10 +36,11 @@ public class BenchmarkTest {
         byte[] bytes = Base64.getUrlEncoder().encode((user + ":" + pwd).getBytes());
         nu = new NetworkUtil(params.get("apiBase"), "Basic " + new String(bytes, UTF_8));
         
-        entries = Integer.parseInt(params.get("entries"));        
+        entries = Integer.parseInt(params.get("entries"));
+        indexName = params.get("indexName"); 
         bulkEntryTemplate = params.get("bulkEntryTemplate");
-        indexName = params.get("indexName");
-        query = params.get("queryFile");
+        queryTemplate = params.get("queryFile");
+        useCedarling = Boolean.valueOf(params.get("useCedarling"));
         
     }
     
@@ -56,7 +57,7 @@ public class BenchmarkTest {
 
     }
     
-    @Test(dependsOnMethods = "dropIndex")
+    @Test(dependsOnMethods="dropIndex")
     public void fillIndex() throws Exception {
         
         logger.info("Creating {} entries...", entries);
@@ -64,10 +65,10 @@ public class BenchmarkTest {
         
         for (int i = 0; i < entries; i++) {
             payload += String.format(bulkEntryTemplate, getAString(), 
-                        getADecimal(2000, 2026), ranma.nextFloat() * 5);            
+                        getADecimal(2000, 2027), ranma.nextFloat() * MAX_GPA);            
         }
         
-        logger.info("Payload of {} bytes generated", payload.getBytes().length);
+        logger.info("Payload of {} bytes generated ({} {} entries)", payload.getBytes().length, indexName, entries);
         JSONObject obj = nu.sendPost(indexName + "/_bulk?refresh=true", 200, payload);
 
         logger.debug("Checking result of bulk operation");
@@ -75,30 +76,60 @@ public class BenchmarkTest {
         
     }
     
-    @Test(dependsOnMethods = "fillIndex")
-    public void regularQuery() throws Exception {
+    @Test(dependsOnMethods="fillIndex")
+    public void runQueries() throws Exception {
         
-        logger.info("Sending regular query...", entries);
-        JSONObject obj = nu.sendPost(indexName + "/_search", 200, query);
-        queryTookMs = obj.optInt("took", -1);
-        assertTrue(queryTookMs != -1);
+        if (useCedarling) {
+            cedarlingQueries();
+        } else {
+            regularQueries();
+        }
         
     }
     
-    @Test(dependsOnMethods = "regularQuery")
-    public void cedarlingQuery() throws Exception {
+    public void regularQueries() throws Exception {
         
-        dropIndex();
-        fillIndex();
+        int queryTookMs = 0;
+        //Issue several different queries and compute average "took" time
+        for (int i = 0; i < MAX_GPA; i++) {
+            String query = String.format(queryTemplate, i, i + 1);
+            logger.info("Sending regular query #{}...", i + 1);
+            
+            JSONObject obj = nu.sendPost(indexName + "/_search", 200, query);
+            queryTookMs += obj.getInt("took");
+        }
+        logger.info("Average regular query time (ms): {}", String.format("%.3f", 1.0f*queryTookMs / MAX_GPA));
         
-        logger.info("Sending cedarling query...", entries);
-        JSONObject obj = nu.sendPost(indexName + "/_search?search_pipeline=cedarling_search", 200, query);
-        filteredQueryTookMs = obj.optInt("took", -1);
-        assertTrue(filteredQueryTookMs != -1);
+    }
+    
+    public void cedarlingQueries() throws Exception {
+                
+        int queryTookMs = 0, decisionTime = 0;
+        int totalResults = 0, emptyResultSets = 0;
+        //Issue several different queries and compute average "took" and decision time
+        for (int i = 0; i < MAX_GPA; i++) {
+            String query = String.format(queryTemplate, i, i + 1);
+            logger.info("Sending regular query #{}...", i + 1);
+            
+            JSONObject obj = nu.sendPost(indexName + "/_search?search_pipeline=cedarling_search", 200, query);
+            queryTookMs += obj.getInt("took");
+            
+            int adt = obj.getJSONObject("ext").getJSONObject("cedarling").getInt("average_decision_time");
+            int res = obj.getJSONObject("hits").getJSONObject("total").getInt("value");
+            
+            if (adt == -1) {
+                //No decisions performed, ie. empty result set. This may occur when entries member variable is small
+                emptyResultSets++;
+                assertEquals(res, 0);
+            } else {
+                decisionTime += adt;
+                totalResults += res;
+            } 
+        }
         
-        logger.info("Query times (ms): regular, cedarling; ratio");
-        logger.info("{}, {}; {}", queryTookMs, filteredQueryTookMs,
-                    String.format("%.3f", 1.0f*filteredQueryTookMs / queryTookMs));
+        assertEquals(totalResults, entries);
+        logger.info("Average plugin query time (ms): {}", String.format("%.3f", 1.0f*queryTookMs / MAX_GPA));
+        logger.info("Average cedarling decision time (ms): {}", String.format("%.3f", 1.0f*decisionTime / (MAX_GPA - emptyResultSets)));
         
     }
     
@@ -112,14 +143,8 @@ public class BenchmarkTest {
     }
     
     private int getADecimal(int min, int max) {
-        //Pick a uniformly distributed random number from the range
+        //Pick a uniformly distributed random number from the range [min, max)
         return ranma.nextInt(max - min + 1) + min;
-    }
-    
-    /*
-    private float getAFloat() {        
-        //returns a random float number in [0, 1) with two decimal digits
-        return ranma.nextInt(100) / 100.0f;
-    }*/
+    }    
     
 }

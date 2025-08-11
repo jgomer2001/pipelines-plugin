@@ -11,6 +11,7 @@ public class PluginSettings {
 
     private long lastUpdated;
     private boolean enabled;
+    private boolean skipHits;
     private JSONObject bootstrapProperties;
     private String searchActionName;
     private String schemaPrefix;
@@ -19,6 +20,7 @@ public class PluginSettings {
         
         PluginSettings ps = new PluginSettings();
         ps.enabled = job.optBoolean("enabled", true);
+        ps.skipHits = job.optBoolean("skipHits", false);
         
         ps.bootstrapProperties = job.optJSONObject("bootstrapProperties");        
         if (ps.bootstrapProperties == null) {
@@ -47,8 +49,13 @@ public class PluginSettings {
     public long getLastUpdated() {
         return lastUpdated;
     }
+    
     public boolean isEnabled() {
         return enabled;
+    }
+    
+    public boolean isSkipHits() {
+        return skipHits;
     }
     
     public JSONObject getBootstrapProperties() {

@@ -172,7 +172,7 @@ The `search_pipeline` is required so the response to the query is intercepted an
 
 ## About development
 
-Once the work to get all of the pieces running is done, making changes to the plugin is rather straightforward: the Java code is in `src` directory and compilation is a matter of issuing `./gradlew compileJava`.
+Once the work to get all of the pieces running is done, making changes to the plugin is rather straightforward: the Java code is in `src` directory and compilation is a matter of issuing `./gradlew compileJava` at the root of the repo hierarchy.
 
 In package-based installations, OpenSearch log is found at `/var/log/opensearch/opensearch.log`. 
 
@@ -180,4 +180,10 @@ TODO:
 
 - Fix the logging statements. Most of them are at INFO level. That might not be OK
 - Check linting and javadoc warnings
+<!--
 - Copying tokens from Tarp to the payload file to execute the query is uncomfortable. There should be a more agile approach. Plugin is still primitive
+-->
+
+## Benchmarking
+
+See this [page](./benchmark.md).

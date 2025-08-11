@@ -62,10 +62,9 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
         }
         
         try {
-            SearchResponse myResponse; 
+            SearchResponseSections sections = response.getInternalResponse();
             Map empty = Collections.emptyMap();            
-            int authorizedHitsCount = 0;
-            long avgDecisionTime = 0L;
+            int authorizedHitsCount = 0, avgDecisionTime = -1;
             
             CedarlingSearchExtBuilder cseb = CedarlingSearchExtBuilder.class.cast(exts.get(0));
             SearchHits searchHits = response.getHits();
@@ -90,6 +89,8 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                         appendExtraAttributes(map, pluginSettings.getSchemaPrefix(), hit.getIndex(), hit.getId());
                         long temp = System.currentTimeMillis();
                         boolean allowed = CedarlingService.getInstance().authorize(tokens, action, map, context);
+                        //Thread.sleep(200);
+                        //boolean allowed = true;
                         decisionsTook += (System.currentTimeMillis() - temp);
                         
                         if (allowed) {
@@ -102,36 +103,31 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                 } while (it.hasNext());
                 
                 //override the hits, the rest remains all the same
-                SearchHits mySearchHits = new SearchHits(authorized.toArray(new SearchHit[0]), 
+                SearchHit[] noHits = new SearchHit[0];
+                SearchHits mySearchHits = new SearchHits(
+                        pluginSettings.isSkipHits() ? noHits : authorized.toArray(noHits), 
                         searchHits.getTotalHits(), searchHits.getMaxScore(), searchHits.getSortFields(),
                         searchHits.getCollapseField(), searchHits.getCollapseValues());
                 
-                SearchResponseSections sections = response.getInternalResponse();
                 Map<String, ProfileShardResult> shardResults = sections.profile();
-                SearchResponseSections mySections = new SearchResponseSections(mySearchHits,
+                sections = new SearchResponseSections(mySearchHits,
                         sections.aggregations(), sections.suggest(), sections.timedOut(), sections.terminatedEarly(),
                         shardResults.isEmpty() ? null : new SearchProfileShardResults(shardResults),
                         sections.getNumReducePhases(), sections.getSearchExtBuilders());
                 
-                myResponse = new SearchResponse(mySections,
-                        response.getScrollId(), response.getTotalShards(), response.getSuccessfulShards(),
-                        response.getSkippedShards(), response.getTook().getMillis(), response.getPhaseTook(),
-                        response.getShardFailures(), response.getClusters(), response.pointInTimeId());
-                
                 authorizedHitsCount = authorized.size();
-                avgDecisionTime = Math.round((1.0 * decisionsTook) / searchHits.getHits().length);
-                
-            } else {
-                myResponse = response;
+                avgDecisionTime = Math.round((1.0f * decisionsTook) / searchHits.getHits().length);
             }
             
-            return CedarlingSearchResponse.make(
-                        myResponse, 
+            return new CedarlingSearchResponse(
                         Map.of(
                             "authorized_hits_count", authorizedHitsCount,
-                            "average_decision_time", avgDecisionTime,
-                            "total_processing_time", System.currentTimeMillis() - startedAt
-                        )
+                            "average_decision_time", avgDecisionTime
+                        ),
+                        sections, response.getScrollId(), response.getTotalShards(),
+                        response.getSuccessfulShards(), response.getSkippedShards(),
+                        System.currentTimeMillis() - startedAt + response.getTook().getMillis(), response.getPhaseTook(),
+                        response.getShardFailures(), response.getClusters(), response.pointInTimeId()                
                     );
             
         } catch (Exception e) {
