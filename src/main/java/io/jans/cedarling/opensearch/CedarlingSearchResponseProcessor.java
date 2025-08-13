@@ -47,7 +47,6 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
         }
         */
         long startedAt = System.currentTimeMillis();
-        logger.info("At processResponse");
         
         PluginSettings pluginSettings = SettingsService.getInstance().getSettings();
         if (!pluginSettings.isEnabled()) {
@@ -105,10 +104,11 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                 //override the hits, the rest remains all the same
                 SearchHit[] noHits = new SearchHit[0];
                 SearchHits mySearchHits = new SearchHits(
+                        //Use skipHits = true in the plugin config to avoid big response (it's useful for testing)
                         pluginSettings.isSkipHits() ? noHits : authorized.toArray(noHits), 
                         searchHits.getTotalHits(), searchHits.getMaxScore(), searchHits.getSortFields(),
                         searchHits.getCollapseField(), searchHits.getCollapseValues());
-                
+
                 Map<String, ProfileShardResult> shardResults = sections.profile();
                 sections = new SearchResponseSections(mySearchHits,
                         sections.aggregations(), sections.suggest(), sections.timedOut(), sections.terminatedEarly(),

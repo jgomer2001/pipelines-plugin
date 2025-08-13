@@ -103,12 +103,12 @@ Verify the plugin was effectively deployed by running `curl -n https://oshost/_c
 
 OpenSearch provides endpoints for handling configuration settings of plugins as well as Java classes for reading those. However when it comes to large, complex, and nested JSON hierarchies, like the settings this plugin requires, OpenSearch facilities are not convenient. For this purpose, an additional endpoint was implemented in order to retrieve and supply configuration settings. This allows to pass complex JSON objects without hassle. Under the hood everything is converted into a big string and stored as a single setting in Opensearch.
 
-Take a look at the file `settings.txt` found in the root directory of this repo and complete the section regarding policy stores according to the policy created previously. Note data is explicitly supplied here: no pointers to URLs.
+Take a look at the file `settings.json` found in the root directory of this repo and complete the section regarding policy stores according to the policy created previously. Note data is explicitly supplied here: no pointers to URLs.
 
 With a complete settings file, transfer it to the server and call the endpoint `/_plugins/cedarling/settings`:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @settings.txt -X PUT https://oshost/_plugins/cedarling/settings
+curl -n -H 'Content-Type: application/json' -d @settings.json -X PUT https://oshost/_plugins/cedarling/settings
 ```
 
 The response will contain a boolean value indicating the operation success. The current settings can be retrieved issuing a `GET` to the same endpoint. To check the actual settings OpenSearch stores, use a request like:

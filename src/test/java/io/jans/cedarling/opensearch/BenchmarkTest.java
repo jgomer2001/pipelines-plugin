@@ -60,16 +60,18 @@ public class BenchmarkTest {
     @Test(dependsOnMethods="dropIndex")
     public void fillIndex() throws Exception {
         
-        logger.info("Creating {} entries...", entries);
+        logger.info("Creating documents...");
         String payload = "";
         
         for (int i = 0; i < entries; i++) {
             payload += String.format(bulkEntryTemplate, getAString(), 
-                        getADecimal(2000, 2027), ranma.nextFloat() * MAX_GPA);            
+                        getADecimal(2020, 2027), ranma.nextFloat() * MAX_GPA);            
         }
         
-        logger.info("Payload of {} bytes generated ({} {} entries)", payload.getBytes().length, indexName, entries);
-        JSONObject obj = nu.sendPost(indexName + "/_bulk?refresh=true", 200, payload);
+        logger.info("Payload of {} {} documents generated ({} bytes)", entries, indexName, payload.getBytes().length);
+        JSONObject obj = nu.sendPost(indexName + "/_bulk?refresh=true&filter_path=-items", 200, payload);
+        //refresh param allows the inserted documents to be immediately available for search after the POST is submitted
+        //filter_path elides the metadata associated to every insertion attempt, reducing the response size considerably
 
         logger.debug("Checking result of bulk operation");
         assertFalse(obj.getBoolean("errors"));
@@ -79,11 +81,27 @@ public class BenchmarkTest {
     @Test(dependsOnMethods="fillIndex")
     public void runQueries() throws Exception {
         
+        int perfectScorers = warmUpQuery();
         if (useCedarling) {
-            cedarlingQueries();
+            cedarlingQueries(perfectScorers);
         } else {
             regularQueries();
         }
+        
+    }
+    
+    //The very first query after the bulk is run tends to be very slow. Hence, a dummy query is issued and discarded
+    public int warmUpQuery() throws Exception {
+        
+        //This one will likely produce zero results, however in practice MAX_GPA multiplied by a random float
+        //(see method fillIndex) may yield exactly MAX_GPA
+        String query = String.format(queryTemplate, MAX_GPA, MAX_GPA + 1);        
+        logger.info("Sending warmup query...");
+        
+        JSONObject obj = nu.sendPost(indexName + "/_search?size=" + entries, 200, query);        
+        //filter_path=-hits.hits can be used to elide the actual document hits from the response reducing its size considerably
+        logger.info("Took {}ms \n", obj.getInt("took"));
+        return obj.getJSONObject("hits").getJSONObject("total").getInt("value");
         
     }
     
@@ -95,14 +113,15 @@ public class BenchmarkTest {
             String query = String.format(queryTemplate, i, i + 1);
             logger.info("Sending regular query #{}...", i + 1);
             
-            JSONObject obj = nu.sendPost(indexName + "/_search", 200, query);
+            JSONObject obj = nu.sendPost(indexName + "/_search?size=" + entries, 200, query);
             queryTookMs += obj.getInt("took");
         }
+        logger.info("");
         logger.info("Average regular query time (ms): {}", String.format("%.3f", 1.0f*queryTookMs / MAX_GPA));
         
     }
-    
-    public void cedarlingQueries() throws Exception {
+
+    public void cedarlingQueries(int perfectScorers) throws Exception {
                 
         int queryTookMs = 0, decisionTime = 0;
         int totalResults = 0, emptyResultSets = 0;
@@ -111,14 +130,14 @@ public class BenchmarkTest {
             String query = String.format(queryTemplate, i, i + 1);
             logger.info("Sending regular query #{}...", i + 1);
             
-            JSONObject obj = nu.sendPost(indexName + "/_search?search_pipeline=cedarling_search", 200, query);
+            JSONObject obj = nu.sendPost(indexName + "/_search?search_pipeline=cedarling_search&size=" + entries, 200, query);
             queryTookMs += obj.getInt("took");
             
             int adt = obj.getJSONObject("ext").getJSONObject("cedarling").getInt("average_decision_time");
             int res = obj.getJSONObject("hits").getJSONObject("total").getInt("value");
             
             if (adt == -1) {
-                //No decisions performed, ie. empty result set. This may occur when entries member variable is small
+                //No decisions performed, ie. empty result set. This may occur when the amount of generated documents is small
                 emptyResultSets++;
                 assertEquals(res, 0);
             } else {
@@ -127,9 +146,11 @@ public class BenchmarkTest {
             } 
         }
         
-        assertEquals(totalResults, entries);
+        assertEquals(totalResults + perfectScorers, entries);
+        logger.info("");
         logger.info("Average plugin query time (ms): {}", String.format("%.3f", 1.0f*queryTookMs / MAX_GPA));
-        logger.info("Average cedarling decision time (ms): {}", String.format("%.3f", 1.0f*decisionTime / (MAX_GPA - emptyResultSets)));
+        logger.info("Average Cedarling decision time per document (ms): {}",
+                String.format("%.3f", 1.0f*decisionTime / (MAX_GPA - emptyResultSets)));
         
     }
     

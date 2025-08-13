@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 public class NetworkUtil {
     
-    private static final int RESPONSE_TRUNCATE_LEN = 127;
+    private static final int RESPONSE_TRUNCATE_LEN = 180;
     private Logger logger = LogManager.getLogger(getClass());
     
     private int connectionTimeout;
@@ -20,7 +20,7 @@ public class NetworkUtil {
     private String authzHeader;
     
     public NetworkUtil(String host, String authzHeader) {
-        this(host, authzHeader, 4500, 5500);
+        this(host, authzHeader, 4500, 30000);
     }
     
     public NetworkUtil(String host, String authzHeader, int connectionTimeout, int readTimeout) {
