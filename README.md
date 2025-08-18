@@ -178,6 +178,7 @@ In package-based installations, OpenSearch log is found at `/var/log/opensearch/
 
 TODO:
 
+- Create a _status_ or _healthcheck_ endpoint and make cedarling initialize there, not upon first usage. This helps to early catch initialization/configuration issues
 - Fix the logging statements. Most of them are at INFO level. That might not be OK
 - Check linting and javadoc warnings
 <!--

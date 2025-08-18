@@ -8,7 +8,7 @@
             "HS256",
             "RS256"
         ],
-        "CEDARLING_ID_TOKEN_TRUST_MODE": "none",
+        "CEDARLING_ID_TOKEN_TRUST_MODE": "never",
         "CEDARLING_MAPPING_USER": "Jans::User",
         "CEDARLING_PRINCIPAL_BOOLEAN_OPERATION": {
             "===": [

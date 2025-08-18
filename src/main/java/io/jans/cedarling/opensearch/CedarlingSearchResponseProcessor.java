@@ -139,11 +139,12 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
 
     private void appendExtraAttributes(Map<String, Object> map, String prefix, String indexName, String id) {
 
-        map.putAll(     //TODO: this needs discussion with the Cedarling team
-            Map.of(
-                "type", prefix + "::" + indexName,
-                "entity_type", "resource",
-                "id", id
+        map.putAll(
+            Map.of("cedar_entity_mapping",
+                Map.of(
+                    "entity_type", prefix + "::" + indexName,
+                    "id", id
+                )
             )
         );
         
