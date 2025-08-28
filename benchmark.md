@@ -29,7 +29,7 @@ The number of documents (bulk size) per test was 10,000. Given the uniform distr
 
 The above shows that most of the processing time is due to Cedarling authorization while the rest of plugin code only accounts for 3% of the overhead (0.06ms). 
 
-These tests force the retrieval of all matching documents at once every time, however in practice many apps will process query responses in small pages - the default search endpoint page size in OpenSearch is 10. This means despite the big ratio obtained (67.38), using Cedarling authorization is promising, specifically when retrieving data in small batches of documents is fine. For example 100 documents could be retrieved in approximately half a second in the circumstances described in this document.
+These tests force the retrieval of all matching documents at once every time, however in practice many apps will process query responses in small pages - the default search endpoint page size in OpenSearch is 10. This means despite the big ratio obtained (67.38), using Cedarling authorization is promising, specifically when retrieving data in small batches of documents is fine. For example 50 documents could be retrieved in approximately 103 milliseconds in the circumstances described in this document.
 
 ## How to run
 
