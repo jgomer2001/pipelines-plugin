@@ -16,7 +16,7 @@
                 "ALLOW"
             ]
         },
-        "CEDARLING_POLICY_STORE_URI":"https://..."
+        "CEDARLING_POLICY_STORE_URI": "https://..."
     },
     "searchActionName": "Jans::Action::\"Search\"",
     "schemaPrefix": "Jans",
