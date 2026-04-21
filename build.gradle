@@ -58,7 +58,7 @@ opensearchplugin {
     classname "${packagePath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE.txt')
     noticeFile rootProject.file('NOTICE.txt')
-    version "1.0.0-SNAPSHOT.0"
+    version "1.0.0-SNAPSHOT"
 }
 
 // This requires an additional Jar not published as part of build-tools
@@ -69,7 +69,7 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "3.6.0")
     }
 
     repositories {
@@ -96,8 +96,8 @@ dependencies {
     // JSON processing
     implementation "org.json:json:20231013"
     // Logging
-    implementation "org.apache.logging.log4j:log4j-api:2.21.0"
-    implementation "org.apache.logging.log4j:log4j-core:2.21.0"
+    implementation "org.apache.logging.log4j:log4j-api:2.25.3"
+    implementation "org.apache.logging.log4j:log4j-core:2.25.3"
     // Cedarling FFI
     implementation "io.jans:cedarling-java:0.0.0-nightly"
     

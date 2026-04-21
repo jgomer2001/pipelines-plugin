@@ -12,6 +12,7 @@ public class PluginSettings {
     private long lastUpdated;
     private boolean enabled;
     private boolean skipHits;
+    private boolean logCedarlingLogs;
     private JSONObject bootstrapProperties;
     private String searchActionName;
     private String schemaPrefix;
@@ -21,6 +22,7 @@ public class PluginSettings {
         PluginSettings ps = new PluginSettings();
         ps.enabled = job.optBoolean("enabled", true);
         ps.skipHits = job.optBoolean("skipHits", false);
+        ps.logCedarlingLogs = job.optBoolean("logCedarlingLogs", true);
         
         ps.bootstrapProperties = job.optJSONObject("bootstrapProperties");        
         if (ps.bootstrapProperties == null) {
@@ -56,6 +58,10 @@ public class PluginSettings {
     
     public boolean isSkipHits() {
         return skipHits;
+    }
+    
+    public boolean isLogCedarlingLogs() {
+        return logCedarlingLogs;
     }
     
     public JSONObject getBootstrapProperties() {
