@@ -62,7 +62,7 @@ public class SettingsRestHandler extends BaseRestHandler {
                 
                 if (hasJsonHeader) {
                     String payload = request.content().utf8ToString();
-                    logger.info("Payload size is {}", payload.length());
+                    logger.debug("Payload size is {}", payload.length());
                     
                     JSONObject job = new JSONObject(payload);   //ensure it is really JSON content
                     Long now = System.currentTimeMillis();
@@ -73,7 +73,7 @@ public class SettingsRestHandler extends BaseRestHandler {
                     ));
                     
                     ClusterAdminClient caca = CedarlingPlugin.getClusterAdminClient();
-                    logger.info("Sending update settings request to cluster...");
+                    logger.debug("Sending update settings request to cluster...");
                     
                     ClusterUpdateSettingsResponse updateResponse = caca.updateSettings(cusr).actionGet(TIMEOUT);
                     boolean acknowledged = updateResponse.isAcknowledged();
@@ -89,7 +89,7 @@ public class SettingsRestHandler extends BaseRestHandler {
                     response = new BytesRestResponse(RestStatus.NOT_ACCEPTABLE, "Unexpected Content-Type header");
                 }
                 
-                logger.info("Sending PUT response...");
+                logger.debug("Sending PUT response...");
                 channel.sendResponse(response);
             } catch (Exception e) {
                 channel.sendResponse(new BytesRestResponse(channel, e));
@@ -117,7 +117,7 @@ public class SettingsRestHandler extends BaseRestHandler {
                     BytesReference.bytes(JsonXContent.contentBuilder().map(map))
                 );
 
-                logger.info("Sending GET response...");
+                logger.debug("Sending GET response...");
                 channel.sendResponse(response);
             } catch (Exception e) {
                 channel.sendResponse(new BytesRestResponse(channel, e));

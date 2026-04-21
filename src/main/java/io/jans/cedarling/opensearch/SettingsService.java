@@ -53,7 +53,7 @@ public class SettingsService {
                 logger.warn("Plugin settings not set yet");
                 return;
             }
-            logger.info("Last updated on {}", Instant.ofEpochMilli(lastUpdated).toString());
+            logger.debug("Last updated on {}", Instant.ofEpochMilli(lastUpdated).toString());
             
             String key = CedarlingPlugin.SETTINGS_KEY;
             JSONObject job = Optional.ofNullable(settings.get(settings.get(key)))
@@ -65,7 +65,8 @@ public class SettingsService {
             }
                     
             pluginSettings = PluginSettings.from(job, lastUpdated);
-            CedarlingService.getInstance().init(pluginSettings.getBootstrapProperties());
+            CedarlingService.getInstance()
+                .init(pluginSettings.getBootstrapProperties(), pluginSettings.isLogCedarlingLogs());
 
         } catch (Exception e) {
             logger.error("Error trying to parse Cedarling plugin settings", e);

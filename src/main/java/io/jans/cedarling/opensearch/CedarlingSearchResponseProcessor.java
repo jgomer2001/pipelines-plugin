@@ -37,9 +37,8 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
             "ext" {
                 "tbac": {
                     "tokens": {
-                        "access_token": "...",
-                        "id_token": "...",
-                        "userinfo_token": "..."
+                        "Jans::Userinfo_token": "ey..."
+                        //more token mappings here if needed according to policy
                     },
                     "context": { ... }
                 }
@@ -54,6 +53,12 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
             return response;
         }
         
+        CedarlingService cedarlingService = CedarlingService.getInstance();
+        if (!cedarlingService.isStarted()) {
+            logger.debug("Cedarling service did not start properly");
+            return response;
+        }
+        
         List<SearchExtBuilder> exts = request.source().ext();
         if (exts.isEmpty()) {
             logger.warn("No 'ext' in request");
@@ -63,7 +68,8 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
         try {
             SearchResponseSections sections = response.getInternalResponse();
             Map empty = Collections.emptyMap();            
-            int authorizedHitsCount = 0, avgDecisionTime = -1;
+            int authorizedHitsCount = 0;
+            long avgDecisionTime = -1;
             
             CedarlingSearchExtBuilder cseb = CedarlingSearchExtBuilder.class.cast(exts.get(0));
             SearchHits searchHits = response.getHits();
@@ -86,11 +92,9 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                     
                     try {
                         appendExtraAttributes(map, pluginSettings.getSchemaPrefix(), hit.getIndex(), hit.getId());
-                        long temp = System.currentTimeMillis();
-                        boolean allowed = CedarlingService.getInstance().authorize(tokens, action, map, context);
-                        //Thread.sleep(200);
-                        //boolean allowed = true;
-                        decisionsTook += (System.currentTimeMillis() - temp);
+                        long temp = System.nanoTime();
+                        boolean allowed = cedarlingService.authorize(tokens, action, map, context);
+                        decisionsTook += (System.nanoTime() - temp);
                         
                         if (allowed) {
                             authorized.add(hit);
@@ -116,7 +120,8 @@ public class CedarlingSearchResponseProcessor extends AbstractProcessor implemen
                         sections.getNumReducePhases(), sections.getSearchExtBuilders());
                 
                 authorizedHitsCount = authorized.size();
-                avgDecisionTime = Math.round((1.0f * decisionsTook) / searchHits.getHits().length);
+                //compute average decision time per document in micro seconds
+                avgDecisionTime = Math.round(decisionsTook / (1000.0d * searchHits.getHits().length));
             }
             
             return new CedarlingSearchResponse(
