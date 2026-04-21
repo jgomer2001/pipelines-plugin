@@ -4,8 +4,8 @@ This is a demo plugin aimed at integrating token-based access control into [Open
 
 ## Requisites
 
-- OpenSearch 3.0.0
-- [Jans Server](https://github.com/JanssenProject/jans/releases) 1.8.0
+- OpenSearch 3.6.0
+- [Jans Server](https://github.com/JanssenProject/jans/releases) 1.16.0
 - A browser with tarp extension installed
 - Basic Cedar and OpenSearch knowledge
 - Java 21 and `git` for development
@@ -15,34 +15,24 @@ This is a demo plugin aimed at integrating token-based access control into [Open
 - All commands given in this document were tested using Ubuntu 22. Accommodate to your specific OS
 - The OpenSearch installation used to test here was single node and packaged-based. Installers can be found [here](https://docs.opensearch.org/docs/latest/install-and-configure/) for several OSes. Keep the admin password at hand
 
+### Create an .netrc file
+
+To avoid typing the OpenSearch password in `curl` commands over and over, create a `~/.netrc` [file](https://everything.curl.dev/usingcurl/netrc.html). Here is how it might look:
+
+```
+machine localhost login admin password secret
+```
+
 ### Run the health check
 
 With `curl`, issue a request to the cluster health [endpoint](https://docs.opensearch.org/docs/latest/api-reference/cluster-api/cluster-health/) to check status. By default all API requests are served through port `9200`, e.g. `https://localhost:9200`. It may take some administrative work to properly issue requests from the development machine, however sending `curl` requests directly from the server where OpenSearch resides is OK for testing purposes.
 
 In this document, occurrences of `https://oshost` will refer to the root URL where OpenSearch HTTP API can be reached.
 
-### Create an .netrc file
-
-Once a successful response is obtained from the health check, create a `~/.netrc` [file](https://everything.curl.dev/usingcurl/netrc.html) to avoid typing the OpenSearch password in the command line every time. This takes the `-u admin:password` switch out of the way. Instead, `-n` can be used from here onwards.
-
 ## Create and test a cedar policy
 
 Here, the intention is to create a policy that looks like:
 
-<!--
-```
-@id("alumni_restricted_access")
-permit(
-    principal is Jans::User,
-    action in Jans::Action::"Search",
-    resource is Jans::student
-)
-when {
-    resource.grad_year < 2025 || 
-    principal has "role" && principal.role.contains("SupremeRuler") 
-};
-```
--->
 
 ```
 @id("alumni_restricted_access")
@@ -51,9 +41,13 @@ permit(
   action in Jans::Action::"Search",
   resource is Jans::student
 )
-when { 
+when {
   resource.grad_year < 2026 ||
-  principal in Jans::Role::"AdmissionsCounselor"
+  (
+    context has tokens.jans_userinfo_token &&
+    context.tokens.jans_userinfo_token.hasTag("role") &&
+    context.tokens.jans_userinfo_token.getTag("role").contains("AdmissionsCounselor")
+  )
 };
 ```
 
@@ -78,7 +72,7 @@ with the `student` entity type in the schema:
 More attributes can be added if desired.
 -->
 
-For this, follow the steps found [here](https://docs.jans.io/head/cedarling/cedarling-quick-start/#implement-rbac-using-signed-tokens-tbac) as a guide. Note it is highly recommended to use Agama lab's policy designer in this case as well as Tarp for quickly testing the policy.
+For this, follow the steps found [here](https://docs.jans.io/head/cedarling/quick-start/cedarling-quick-start/#implement-rbac-using-signed-tokens-tbac) as a guide. Note it is highly recommended to use Agama lab's policy designer in this case as well as Tarp for quickly testing the policy. Ensure `student` is added to the `Search` action.
 
 <!--
 The `User` resource should be already there if you used . Ensure the `role` attribute is not mandatory.
@@ -86,11 +80,11 @@ The `User` resource should be already there if you used . Ensure the `role` attr
 The easiest way to test the policy is using Tarp. Continue with the steps in the doc [page](https://docs.jans.io/head/cedarling/cedarling-quick-start-tbac/) for this purpose now using the previously setup Jans Server and the policy just created. To get the policy URI in Agama Lab, go to "Policy Stores", click on "Manage" on the corresponding policy row, and then on "Copy link".
 -->
 
-For those short of time, there is a readily available policy store [here](https://raw.githubusercontent.com/jgomer2001/CedarlingQuickstart/refs/heads/agama-lab-policy-designer/449805c83e13f332b1b35eac6ffa93187fbd1c648085.json).
+For the short of time, there is a readily available policy store [here](https://github.com/jgomer2001/CedarlingQuickstart/releases/download/v0.0.2/tarpDemo.cjar).
 
 ## Plugin deployment
 
-In the development machine, clone this repository. `cd` to the repo directory and run `./gradlew assemble -Dopensearch.version=3.0.0`. Ensure `JAVA_HOME` environment points to a Java 21 installation, e.g. `export JAVA_HOME=/path/to/corretto-21`.
+In the development machine, clone this repository. `cd` to the repo directory and run `./gradlew assemble -Dopensearch.version=3.6.0`. Ensure `JAVA_HOME` environment points to a Java 21 installation, e.g. `export JAVA_HOME=/path/to/corretto-21`.
 
 `cd` to `build/distributions`. And run:
 
@@ -151,7 +145,7 @@ Note that in real world scenarios, indices already exist and policies are built 
 This plugins implements a search response processor which must be "attached" to a [search pipeline](https://docs.opensearch.org/docs/latest/search-plugins/search-pipelines/index/). Transfer the file [pipeline.json](https://github.com/jgomer2001/pipelines-plugin/raw/refs/heads/main/pipeline.json) to the OpenSearch server and run:
 
 ```
-curl -n -H 'Content-Type: application/json' -d @pipeline.txt -X PUT https://oshost/_search/pipeline/cedarling_search?pretty
+curl -n -H 'Content-Type: application/json' -d @pipeline.json -X PUT https://oshost/_search/pipeline/cedarling_search?pretty
 ```
 
 This action needs to be performed only **once** regardless of how many plugin redeployments take place.
@@ -166,9 +160,7 @@ Open Tarp. If this is the first time you use it, add a client there beforehand. 
 - Scope: `openid` and `profile`
 - Check "Display tokens"
 
-After logging in, copy the tokens and paste them in the corresponding section inside file [query_ext.json](https://github.com/jgomer2001/pipelines-plugin/raw/refs/heads/main/query_ext.json). This is an "extended" search query the plugin will have access to so the Cedarling engine can be supplied with tokens and contextual data to make decisions.
-
-This is how a [sample tokens payload](https://github.com/jgomer2001/pipelines-plugin/raw/refs/heads/main/sample_tokens.json) looks like. You can paste the content of each token in [jwt.io](https://www.jwt.io) to decode its contents and explore. 
+After logging in, copy the UserInfo token and paste it in the corresponding section inside file [query_ext.json](https://github.com/jgomer2001/pipelines-plugin/raw/refs/heads/main/query_ext.json). This is an "extended" search query the plugin will have access to so the Cedarling engine can be supplied with tokens and contextual data to make decisions.
 
 Then, run:
 
@@ -185,14 +177,16 @@ The `search_pipeline` is required so the response to the query is intercepted an
 
 Once the work to get all of the pieces running is done, making changes to the plugin is rather straightforward: the Java code is in `src` directory and compilation is a matter of issuing `./gradlew compileJava` at the root of the repo hierarchy.
 
-In package-based installations, OpenSearch log is found at `/var/log/opensearch/opensearch.log`. 
+In package-based installations, OpenSearch log is found at `/var/log/opensearch/opensearch.log`. To be able to see the logging statements produced by this plugin, add a line like the below to `/etc/opensearch/opensearch.yml` and restart opensearch (`systemctl restart opensearch.service`): 
 
-TODO:
-
-- Create a _status_ or _healthcheck_ endpoint and make cedarling initialize there, not upon first usage. This helps to early catch initialization/configuration issues
-- Fix the logging statements. Most of them are at INFO level - that might not be OK
-- Check linting and javadoc warnings
+```
+logger.io.jans.cedarling: trace
+```
 
 ## Benchmarking
 
 See this [page](./benchmark.md).
+
+## TODO:
+
+- Check linting and javadoc warnings

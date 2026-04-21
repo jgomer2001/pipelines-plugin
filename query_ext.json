@@ -6,9 +6,7 @@
     "ext": {
         "tbac": {
             "tokens": {
-                "access_token": "...",
-                "id_token": "...",
-                "userinfo_token": "..."
+                "Jans::Userinfo_token": "eyJraWQiOiJjb25uZWN0X2VkYzlhOWIzLWFhNWUtNDQ1Ni1iYWY3LTljYjdhMzA3YmZkOV9zaWdfcnMyNTYiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJqSkZBb3hSaTBTTmNWZk1XdFBaNkd3bUc5Z0w2UlRBOFg3U3Q4Q2dTRXFRIiwicm9sZSI6WyJDYXNhQWRtaW4iXSwiaXNzIjoiaHR0cHM6Ly9qZ29tZXIyMDAxLWluY2x1ZGVkLXBpZy5nbHV1LmluZm8iLCJnaXZlbl9uYW1lIjoiQWRtaW4iLCJtaWRkbGVfbmFtZSI6IkFkbWluIiwiaW51bSI6Ijc2YmIxMzkyLTI3MWEtNGMxZC1iNjI1LTVlMTIxYjAyZDU4MiIsImNsaWVudF9pZCI6ImQ1NmNiYWVhLWZmMjAtNDgwYi04YWUzLWQ0ZWFlZDdkZDM0ZCIsImF1ZCI6ImQ1NmNiYWVhLWZmMjAtNDgwYi04YWUzLWQ0ZWFlZDdkZDM0ZCIsIm5iZiI6MTc3NjcxMjI0NCwidXBkYXRlZF9hdCI6MTc3NjM2NDkyNSwibmFtZSI6IkRlZmF1bHQgQWRtaW4gVXNlciIsIm5pY2tuYW1lIjoiQWRtaW4iLCJleHAiOjE3NzY3MTU4NDQsImlhdCI6MTc3NjcxMjI0NCwiZmFtaWx5X25hbWUiOiJVc2VyIiwianRpIjoiekFxNFg4OWZUTldCOURTSGI1OU9iUSIsImphbnNBZG1pblVJUm9sZSI6WyJhZG1pbiJdfQ.Ch-WlTFmEm-w60lPHxcHT0a-1N9W095NG78Gw9pM6kbtiCek7CqrTTzkCSz3T2IqDWqpmlk7o1MonL4nGckfsasiXKs_dm_CrHzeZN1O6wut2s6VadhjmqyMsx53s7GeVVe2hsDkdpNWCn4SI5HmHSsJ9tqXly_DhzriaWykjjFDk17JHLPFRn-dGsD8YBJsh42CjS8VjFxP4JUG4XCua4ZbLTppSso6VV23-0S1mcUG4aSZb4w1G7aN_D2uUKjWCK7e9B-wODvhbDHZCZUB5I47MzEowKuTn9toMS2PDbvrCj-IXYNkNLU-UHOwS7EtuE35elZa4Atz-F0ITwP-4Q"
             },
             "context": { }
         }
