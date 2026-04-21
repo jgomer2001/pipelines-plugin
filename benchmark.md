@@ -3,7 +3,7 @@
 To compare the performance of regular queries vs. queries filtered via this plugin, benchmarking tests were designed. This is what a test does:
 
 - Removes the index in question entirely (e.g. `student`)
-- Loads in bulk a set of JSON documents. Every document is generated with a (short) random name, a random graduation year (uniformly distributed between 2020 and 2026), and a GPA (random floating number between 0 and 5) 
+- Loads in bulk a set of JSON documents. Every document is generated with a (short) random name, a random graduation year (uniformly distributed between 2021 and 2026), and a GPA (random floating number between 0 and 5) 
 - Runs five queries that return documents with GPAs matching the intervals [0, 1), [1, 2), etc. <!--Before this, a preliminary warmup query is issued for the interval [5, 6) and its result discarded: it was observed that after the bulk is performed, the very first query takes a very long time compared to subsequent queries -->
 - The average query response time is computed. This does not include network latency - only server side processing
 

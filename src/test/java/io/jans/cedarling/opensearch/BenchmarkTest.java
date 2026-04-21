@@ -65,7 +65,7 @@ public class BenchmarkTest {
         
         for (int i = 0; i < entries; i++) {
             payload += String.format(bulkEntryTemplate, getAString(), 
-                        getADecimal(2020, 2027), ranma.nextFloat() * MAX_GPA);            
+                        getADecimal(2021, 2027), ranma.nextFloat() * MAX_GPA);            
         }
         
         logger.info("Payload of {} {} documents generated ({} bytes)", entries, indexName, payload.getBytes().length);
@@ -122,8 +122,9 @@ public class BenchmarkTest {
     }
 
     public void cedarlingQueries(int perfectScorers) throws Exception {
-                
-        int queryTookMs = 0, decisionTime = 0;
+
+        long decisionTime = 0;
+        int queryTookMs = 0;
         int totalResults = 0, emptyResultSets = 0;
         //Issue several different queries and compute average "took" and decision time
         for (int i = 0; i < MAX_GPA; i++) {
@@ -133,7 +134,7 @@ public class BenchmarkTest {
             JSONObject obj = nu.sendPost(indexName + "/_search?search_pipeline=cedarling_search&size=" + entries, 200, query);
             queryTookMs += obj.getInt("took");
             
-            int adt = obj.getJSONObject("ext").getJSONObject("cedarling").getInt("average_decision_time");
+            long adt = obj.getJSONObject("ext").getJSONObject("cedarling").getInt("average_decision_time");
             int res = obj.getJSONObject("hits").getJSONObject("total").getInt("value");
             
             if (adt == -1) {
@@ -149,8 +150,8 @@ public class BenchmarkTest {
         assertEquals(totalResults + perfectScorers, entries);
         logger.info("");
         logger.info("Average plugin query time (ms): {}", String.format("%.3f", 1.0f*queryTookMs / MAX_GPA));
-        logger.info("Average Cedarling decision time per document (ms): {}",
-                String.format("%.3f", 1.0f*decisionTime / (MAX_GPA - emptyResultSets)));
+        logger.info("Average Cedarling Java decision time per document (ms): {}",
+                String.format("%.3f", decisionTime / ((MAX_GPA - emptyResultSets) * 1000.0f)));
         
     }
     
