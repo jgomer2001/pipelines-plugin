@@ -65,7 +65,7 @@ public class BenchmarkTest {
         
         for (int i = 0; i < entries; i++) {
             payload += String.format(bulkEntryTemplate, getAString(), 
-                        getADecimal(2021, 2027), ranma.nextFloat() * MAX_GPA);            
+                        getADecimal(2024, 2028), ranma.nextFloat() * MAX_GPA);
         }
         
         logger.info("Payload of {} {} documents generated ({} bytes)", entries, indexName, payload.getBytes().length);
